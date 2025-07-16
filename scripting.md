@@ -130,7 +130,18 @@ grep -r "word" file.txt
 #search using file
 grep -f pattern.txt 1.txt
 
+NOTE: 
+#grep, awk, sed uses POSIX way [[:digit:]]
+#python, js, vim uses perl-styled regex "\d"
+
 Examples:
+#\b inside grep regex marks word boundary and \w selects line with atleast 1 word, ex:
+grep -e "\ba\b|\ban\b|\bthe\b" poem -v | grep -e "\w | wc -l"
+
+#egrep is deprecated used grep -E instead
+#lower array for list of files with 4 digit, 6 hexadecimal w. lowercase
+lower=(`ls | grep -E "[[:digit:]]{4}[[:xdigit:]]{6}" | grep -E "[[:lower:]]"`)
+
 check if user has read perms:
 if [[ $(ls -l $1 | grep -e "-r--------*") ]]
 then
@@ -138,6 +149,7 @@ then
 fi
 
 if two args is provided, add else return Error
+#space in the if condn is also v. important
 if [ $# != 2 ]
 then
  echo Error
@@ -146,3 +158,101 @@ if [ $# = 2 ]
 then
  echo $(($1+$2))
 fi
+
+#o-flag displays only the matched 
+#here -o pull off the pincode then cut -c1 exact first number
+pattern instead of whole line
+#from pincode.csv extract pincodes starting and ending with same number
+number=`grep -E -i "$state" pincode.csv | head -1 | grep -E -o [[:digit:]]{6} | cut -c1`
+grep -i "$state" pincode.csv | grep -E -o "$number[0-9]{4}$number"
+
+#NOTE
+=~ matches regex in bash
+
+#last line num count
+sed -n "\$="
+
+#print lines btw FROM and T, then remove FROM and TO
+#comma is for range
+sed -n '/FROM/,/TO/p' file.txt | sed '/FROM/d' | sed '/TO/d'
+
+#sed
+#mostly use for replacing strings
+sed 's/old_string/new_string' file.txt
+
+#replace 2nd occurence, /g to replace all
+#2g to replace all the occurence from 2nd, 3rd, 4th ... so on.
+sed 's/old_string/new_string/2' file.txt
+
+#restrict the command usage to line 3
+sed '3 s/old/new' file.txt
+#works with range of line numbers
+sed '1,3 s/old/new' file.txt
+#$ indicates the last line
+sed '1,$ s/old/new' file.txt
+
+#p flag prints the line twice in the terminal after execution, else once
+sed 's/old/new/p' file.txt
+
+#n flag solves this by supressing duplicated lines & prints only the replace line, but it works with /p
+sed -n 's/old/new/p' file.txt
+
+#delete w. sed
+#5th line
+sed '5d' file.txt
+
+#last line
+sed '$d' file.txt
+
+#range
+sed '2,5d' file.txt
+
+#awk - manipulating data and generating reports
+#similar to cat file.txt
+awk '{print}' employee.txt
+
+#search w. keyword
+awk 'manager {print}' employee.txt
+
+#print specific columns
+awk '{print $1, $4}' employee.txt
+
+#display line numbers
+awk '{print NR, $0}' employee.txt
+
+#display last fields
+awk '{print $1, $NF}' employee.txt
+
+#sum of all fields
+BEGIN{
+FS=",";
+sum=0;
+}
+{
+sum=sum+NF;
+}
+END{
+print sum;
+}
+
+#function w. awk
+#multi-option file analyzer
+myCount(){
+filename=${@: -1} #last argument
+
+while getopts "wlns:" options; do
+    case "${options}" in
+        s)
+            str=${OPTARG}
+            grep $str $filename | awk "END{print NR}";;
+        w)
+            awk "BEGIN{c=0} {c+=NF} END{print c}" $filename;;
+        l)
+            awk "END{print NR}" $filename ;;
+        n)
+            awk "BEGIN{c=0} /^[[:digit:]]+\$/{c++} END{print c}" $filename ;;
+        *)
+            echo "ERROR" ;;
+    esac
+done
+}
